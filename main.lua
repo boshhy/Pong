@@ -83,7 +83,7 @@ function love.load()
     -- initialize our virtual resolution, which will be rendered within our
     -- actual window no matter its dimensions
     push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
-        fullscreen = false,
+        fullscreen = true,
         resizable = true,
         vsync = true
     })
@@ -91,7 +91,7 @@ function love.load()
     -- initialize our player paddles; make them global so that they can be
     -- detected by other functions and modules
     player1 = Paddle(10, 30, 5, 20)
-    player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, 5, 20)
+    player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT/2 - 10, 5, 20)
 
     -- place a ball in the middle of the screen
     ball = Ball(VIRTUAL_WIDTH / 2 - 2, VIRTUAL_HEIGHT / 2 - 2, 4, 4)
@@ -136,6 +136,17 @@ end
 ]]
 function love.update(dt)
     if gameState == 'serve' then
+        -- Stop player2 velocity and 
+        -- only change it if its not centered to ball
+        player2.dy = 0
+        -- When player2 is higher than ball bring player down
+        if player2.y + 9 < ball.y then
+            player2.dy = PADDLE_SPEED
+        end
+        -- When player2 is lower than ball bring player up
+        if player2.y + 9 > ball.y + 3 then
+            player2.dy = -PADDLE_SPEED
+        end
         -- before switching to play, initialize ball's velocity based
         -- on player who last scored
         ball.dy = math.random(-50, 50)
@@ -231,8 +242,7 @@ function love.update(dt)
 
     --
     -- paddles can move no matter what state we're in
-    --
-    -- player 1
+    --player 1
     if love.keyboard.isDown('w') then
         player1.dy = -PADDLE_SPEED
     elseif love.keyboard.isDown('s') then
@@ -241,18 +251,20 @@ function love.update(dt)
         player1.dy = 0
     end
 
-    -- player 2
-    if love.keyboard.isDown('up') then
-        player2.dy = -PADDLE_SPEED
-    elseif love.keyboard.isDown('down') then
-        player2.dy = PADDLE_SPEED
-    else
-        player2.dy = 0
-    end
-
     -- update our ball based on its DX and DY only if we're in play state;
     -- scale the velocity by dt so movement is framerate-independent
+    -- used PADDLE_SPEED variable so we just don't match player2.y up to ball.y
     if gameState == 'play' then
+        -- If ball is going up and player2 is below ball then bring player2 up
+        if ball.dy < 0 and player2.y + 9 > ball.y + 1 then
+            player2.dy = -PADDLE_SPEED
+        -- If ball is going down and player2 is higher than ball then bring player2 down
+        elseif ball.dy > 0 and player2.y + 9 < ball.y + 2 then
+            player2.dy = PADDLE_SPEED
+        -- Otherwise keep player2 where it is
+        else
+            player2.dy = 0
+        end
         ball:update(dt)
     end
 
